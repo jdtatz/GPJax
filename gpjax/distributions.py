@@ -26,6 +26,7 @@ import cola
 from cola.ops import (
     Dense,
     Identity,
+    LinearOperator,
 )
 from jax import vmap
 import jax.numpy as jnp
@@ -60,10 +61,8 @@ def _check_loc_scale(loc: Optional[Any], scale: Optional[Any]) -> None:
             f"`scale.shape = {scale.shape}`."
         )
 
-    if scale is not None and not isinstance(scale, cola.LinearOperator):
-        raise ValueError(
-            f"The `scale` must be a cola.LinearOperator but got {type(scale)}"
-        )
+    if scale is not None and not isinstance(scale, LinearOperator):
+        raise ValueError(f"The `scale` must be a LinearOperator but got {type(scale)}")
 
     if scale is not None and (scale.shape[-1] != scale.shape[-2]):
         raise ValueError(
@@ -84,7 +83,7 @@ class GaussianDistribution(tfd.Distribution):
 
     Args:
         loc (Optional[Float[Array, " N"]]): The mean of the distribution. Defaults to None.
-        scale (Optional[cola.LinearOperator]): The scale matrix of the distribution. Defaults to None.
+        scale (Optional[LinearOperator]): The scale matrix of the distribution. Defaults to None.
 
     Returns
     -------
@@ -99,7 +98,7 @@ class GaussianDistribution(tfd.Distribution):
     def __init__(
         self,
         loc: Optional[Float[Array, " N"]] = None,
-        scale: Optional[cola.LinearOperator] = None,
+        scale: Optional[LinearOperator] = None,
     ) -> None:
         r"""Initialises the distribution."""
         _check_loc_scale(loc, scale)
