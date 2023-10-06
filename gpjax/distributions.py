@@ -154,9 +154,8 @@ class GaussianDistribution(tfd.Distribution):
         r"""Calculates the entropy of the distribution."""
         return 0.5 * (
             self.event_shape[0] * (1.0 + jnp.log(2.0 * jnp.pi))
-            + cola.logdet(
-                self.scale, method="dense"
-            )  # <--- Seems to be an issue with CoLA!
+            # FIXME: remove `method="dense"` once https://github.com/wilson-labs/cola/issues/41 is fixed for logdet
+            + cola.logdet(self.scale, method="dense")
         )
 
     def log_prob(
@@ -190,8 +189,9 @@ class GaussianDistribution(tfd.Distribution):
         # compute the pdf, -1/2[ n log(2π) + log|Σ| + (y - µ)ᵀΣ⁻¹(y - µ) ]
         return -0.5 * (
             n * jnp.log(2.0 * jnp.pi)
-            + cola.logdet(sigma, method="dense")  # <--- Seems to be an issue with CoLA!
-            + diff.T @ cola.solve(sigma, diff)
+            # FIXME: remove `method="dense"` once https://github.com/wilson-labs/cola/issues/41 is fixed for both logdet & solve
+            + cola.logdet(sigma, method="dense")
+            + diff.T @ cola.solve(sigma, diff, method="dense")
         )
 
     def _sample_n(self, key: KeyArray, n: int) -> Float[Array, "n N"]:

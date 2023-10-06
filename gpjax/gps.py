@@ -544,7 +544,8 @@ class ConjugatePosterior(AbstractPosterior):
         # Σ⁻¹ Kxt
         if mask is not None:
             Kxt = jnp.where(mask * jnp.ones((1, n_train), dtype=bool), 0.0, Kxt)
-        Sigma_inv_Kxt = cola.solve(Sigma, Kxt)
+        # FIXME: remove `method="dense"` once https://github.com/wilson-labs/cola/issues/41 is fixed for solve
+        Sigma_inv_Kxt = cola.solve(Sigma, Kxt, method="dense")
 
         # μt  +  Ktx (Kxx + Io²)⁻¹ (y  -  μx)
         mean = mean_t.flatten() + Sigma_inv_Kxt.T @ (y - mx).flatten()
