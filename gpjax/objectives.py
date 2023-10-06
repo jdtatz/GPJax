@@ -132,7 +132,11 @@ class ConjugateMLL(AbstractObjective):
         Kyy = posterior.prior.out_kernel.gram(jnp.arange(m)[:, jnp.newaxis])
 
         Sigma = cola.ops.Kronecker(Kxx, Kyy)
-        Sigma = Sigma + cola.ops.I_like(Sigma) * (obs_var + posterior.prior.jitter)
+        if jnp.size(obs_var) > 1:
+            obs_var = jnp.broadcast_to(obs_var, mx.shape).flatten()
+            Sigma += cola.ops.Diagonal(obs_var + posterior.prior.jitter)
+        else:
+            Sigma += cola.ops.I_like(Sigma) * (obs_var + posterior.prior.jitter)
         Sigma = cola.PSD(Sigma)
 
         # flatten to handle multi-output case, then calculate

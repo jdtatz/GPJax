@@ -127,14 +127,14 @@ class Gaussian(AbstractLikelihood):
     r"""Gaussian likelihood object.
 
     Args:
-        obs_stddev (Union[ScalarFloat, Float[Array, "#N"]]): the standard deviation
+        obs_stddev (Union[ScalarFloat, Float[Array, "#N"], Float[Array, "#N D"]]): the standard deviation
             of the Gaussian observation noise.
 
     """
 
-    obs_stddev: Union[ScalarFloat, Float[Array, "#N"]] = param_field(
-        jnp.array(1.0), bijector=tfb.Softplus()
-    )
+    obs_stddev: Union[
+        ScalarFloat, Float[Array, "#N"], Float[Array, "#N D"]
+    ] = param_field(jnp.array(1.0), bijector=tfb.Softplus())
     integrator: AbstractIntegrator = static_field(AnalyticalGaussianIntegrator())
 
     def link_function(self, f: Float[Array, "..."]) -> tfd.Normal:
@@ -172,11 +172,16 @@ class Gaussian(AbstractLikelihood):
 
         cov = dist.covariance()
 
+        if jnp.size(self.obs_stddev) > 1:
+            obs_stddev = jnp.broadcast_to(self.obs_stddev, mean.shape).flatten()
+        else:
+            obs_stddev = self.obs_stddev
+
         # reshape for handling multi-output case
         mean = mean.flatten()
         cov = cov.reshape([mean.size] * 2)
 
-        noisy_cov = cov.at[jnp.diag_indices(event_size)].add(self.obs_stddev**2)
+        noisy_cov = cov.at[jnp.diag_indices(event_size)].add(obs_stddev**2)
 
         likelihood_distr = tfd.MultivariateNormalFullCovariance(mean, noisy_cov)
         if len(dist.event_shape) == 1:

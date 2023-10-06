@@ -517,7 +517,11 @@ class ConjugatePosterior(AbstractPosterior):
 
         # Σ = Kxx + Io²
         Sigma = cola.ops.Kronecker(Kxx, Kyy)
-        Sigma += cola.ops.I_like(Sigma) * (obs_var + self.jitter)
+        if jnp.size(obs_var) > 1:
+            obs_var = jnp.broadcast_to(obs_var, mx.shape).flatten()
+            Sigma += cola.ops.Diagonal(obs_var + self.jitter)
+        else:
+            Sigma += cola.ops.I_like(Sigma) * (obs_var + self.jitter)
         Sigma = cola.PSD(Sigma)
 
         if mask is not None:
